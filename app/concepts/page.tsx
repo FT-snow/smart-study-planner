@@ -20,6 +20,9 @@ export default function ConceptsPage() {
   const [progressReady, setProgressReady] = useState(false);
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState(false);
+  const [sourceCode, setSourceCode] = useState("");
+  const [sourceLoading, setSourceLoading] = useState(true);
+  const [sourceError, setSourceError] = useState("");
 
   useEffect(() => {
     try {
@@ -48,6 +51,30 @@ export default function ConceptsPage() {
   const selected = conceptCatalog.find((lesson) => lesson.number === selectedLecture) ?? conceptCatalog[0];
   const note = conceptNotes[selected.number];
   const example = lessonExamples[selected.number];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setSourceCode("");
+    setSourceError("");
+    setSourceLoading(true);
+
+    fetch(`/java/${example.file}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Could not load Java source (${response.status})`);
+        return response.text();
+      })
+      .then((source) => setSourceCode(source))
+      .catch((loadError: unknown) => {
+        if (controller.signal.aborted) return;
+        setSourceError(loadError instanceof Error ? loadError.message : "Could not load this Java example.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSourceLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [example.file]);
+
   const completedCount = completed.length;
   const progressPercent = Math.round((completedCount / conceptCatalog.length) * 100);
   const normalizedQuery = query.trim().toLowerCase();
@@ -68,8 +95,9 @@ export default function ConceptsPage() {
   }
 
   async function copyExample() {
+    if (!sourceCode) return;
     try {
-      await navigator.clipboard.writeText(example.code);
+      await navigator.clipboard.writeText(sourceCode);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -185,13 +213,14 @@ export default function ConceptsPage() {
             <div className="source-card-heading">
               <div>
                 <p className="eyebrow">Java example</p>
-                <code className="source-file-name">{example.file}</code>
+                <code className="source-file-name">public/java/{example.file}</code>
               </div>
-              <button className="button button-secondary button-small" type="button" onClick={() => void copyExample()}>
+              <button className="button button-secondary button-small" type="button" disabled={!sourceCode} onClick={() => void copyExample()}>
                 {copied ? "Copied" : "Copy code"}
               </button>
             </div>
-            <pre className="java-code"><code>{example.code}</code></pre>
+            {sourceError ? <p className="error-message" role="alert">{sourceError}</p> : null}
+            <pre className="java-code"><code>{sourceLoading ? "Loading Java source…" : sourceCode}</code></pre>
           </section>
 
           <details className="expected-output">

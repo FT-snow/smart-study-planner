@@ -6,10 +6,18 @@ A student-focused study planner and CSC2104 learning project. Organize subjects,
 
 - `/` — simple student workflow and links into the planner
 - `/planner` — manage subjects, tasks, study sessions, and a weekly goal
-- `/concepts` — searchable lectures 1–48, Java examples, copy-code, sample output, and local lesson progress
+- `/concepts` — searchable lectures 1–48, actual Java source files, copy-code, sample output, and local lesson progress
 - `/build` — how a student uses the planner and how the Java model fits together
 
-This is a **frontend-only** project. Planner data and lesson progress are saved in the current browser. The site displays Java examples but does not compile or execute them; the shown console output is a teaching preview.
+The Java files are in `public/java/studyplanner/lessons/lectureNN/`; the Concepts page loads those files directly. Planner data and lesson progress are saved in this browser. The browser displays Java source but does not execute it; the console output is a teaching preview.
+
+To compile the Java lessons locally with JDK 17 or newer:
+
+```sh
+mkdir -p java-out
+javac --release 17 -d java-out $(find public/java -name '*.java')
+java -cp java-out studyplanner.lessons.lecture10.StudyResource
+```
 
 ## Run with Bun
 
