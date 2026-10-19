@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SonarGridDemo from "@/components/ui/demo";
 
 const outcomes = [
   { co: "CSC2104.1", title: "Fundamentals", range: "Lectures 1–13", count: 13, description: "Variables, decisions, loops, arrays, classes, and methods." },
@@ -10,17 +11,7 @@ const outcomes = [
 export default function HomePage() {
   return (
     <>
-      <section className="home-intro">
-        <p className="eyebrow">CSC2104 · Java OOP</p>
-        <h1>Learn Java by building a study planner.</h1>
-        <p className="home-lede">
-          A guided tour of all 48 lecture topics, with each idea explained through a small planner example and Java code.
-        </p>
-        <div className="button-row home-actions">
-          <Link className="button" href="/concepts">Browse the lessons</Link>
-          <Link className="button button-secondary" href="/build">See how it fits together</Link>
-        </div>
-      </section>
+      <SonarGridDemo />
 
       <section className="home-facts" aria-label="Course contents">
         <div><strong>48</strong><span>lecture examples</span></div>
