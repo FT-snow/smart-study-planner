@@ -12,7 +12,7 @@ const settings = {
   pingEvery: 4.2,
   interactive: true,
   spacing: 30,
-  baseOpacity: 0.13,
+  baseOpacity: 0.2,
   useThemeColor: true,
   color: "#3b559f",
 };
