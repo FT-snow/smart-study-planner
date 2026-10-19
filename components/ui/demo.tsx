@@ -48,21 +48,21 @@ export default function SonarGridDemo(props: Partial<typeof settings>) {
           CSC2104 · Java OOP
         </motion.p>
         <motion.h1 {...enter(0.07)} className="sonar-hero-title text-foreground">
-          Learn Java by building a study planner.
+          Plan your week without losing track.
         </motion.h1>
         <motion.p {...enter(0.14)} className="sonar-hero-description text-muted-foreground">
-          Explore 48 small examples, follow the ideas, and see how the classes fit together.
+          Organize all your subjects, tasks, and study sessions in one simple place. Explore the Java concepts behind the project when you are ready.
         </motion.p>
         <motion.div {...enter(0.21)} className="sonar-hero-actions">
-          <Link className="button" href="/concepts">
-            Browse all 48 lessons
+          <Link className="button" href="/planner">
+            Open my planner
             <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
-          <Link className="button button-secondary" href="/build">
-            See the build guide
+          <Link className="button button-secondary" href="/concepts">
+            Explore Java concepts
           </Link>
         </motion.div>
-        <p className="sonar-hero-hint">Tap or click the dot field to send a study signal.</p>
+        <p className="sonar-hero-hint">Tap or click anywhere in the grid.</p>
       </div>
     </SonarGrid>
   );

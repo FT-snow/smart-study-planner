@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 };
 
 const navigation = [
-  { label: "Overview", href: "/" },
-  { label: "Concepts", href: "/concepts" },
-  { label: "Build guide", href: "/build" },
+  { label: "My planner", href: "/planner" },
+  { label: "How it works", href: "/build" },
+  { label: "Java concepts", href: "/concepts" },
 ];
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

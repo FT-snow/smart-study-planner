@@ -1,14 +1,15 @@
 # Smart Study Planner — CSC2104 Java OOP
 
-A standalone Next.js learning project for all 48 CSC2104 Java topics. Each lesson includes a plain-language explanation, a study-planner use case, a Java code example, a short walkthrough, and illustrative console output. The interface uses TypeScript, Tailwind CSS v4, a shadcn-compatible `components/ui` structure, Motion, and Lucide icons.
+A student-focused study planner and CSC2104 learning project. Organize subjects, weekly goals, tasks, and study sessions, then explore all 48 Java topics through examples from the planner. The interface uses TypeScript, Tailwind CSS v4, a shadcn-compatible `components/ui` structure, Motion, and Lucide icons.
 
 ## Pages
 
-- `/` — course overview and the four course outcomes
+- `/` — simple student workflow and links into the planner
+- `/planner` — manage subjects, tasks, study sessions, and a weekly goal
 - `/concepts` — searchable lectures 1–48, Java examples, copy-code, sample output, and local lesson progress
-- `/build` — how the concepts combine into a study-planner object model
+- `/build` — how a student uses the planner and how the Java model fits together
 
-This is a **frontend-only** learning interface. It displays Java examples but does not compile or execute them; the shown output is a teaching preview. Lesson progress is stored in the current browser.
+This is a **frontend-only** project. Planner data and lesson progress are saved in the current browser. The site displays Java examples but does not compile or execute them; the shown console output is a teaching preview.
 
 ## Run with Bun
 

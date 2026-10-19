@@ -58,13 +58,30 @@ export default function BuildPage() {
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">Project walkthrough</p>
-          <h1>How the planner is put together</h1>
+          <p className="eyebrow">Student guide</p>
+          <h1>How it works</h1>
           <p className="page-description">
-            The lessons build from basic values to a small object model, then add rules, files, and concurrent work.
+            Set up your subjects, organize the next tasks, then plan study sessions around your week.
           </p>
         </div>
       </div>
+
+      <section className="student-workflow panel panel-padding">
+        <div className="section-title">
+          <div>
+            <p className="eyebrow">Use the planner</p>
+            <h2>From a busy week to a clear next step</h2>
+          </div>
+          <Link className="text-link" href="/planner">Go to my planner →</Link>
+        </div>
+        <ol className="student-workflow-list">
+          <li><strong>Add every subject.</strong><span>Give each course a weekly time target so your workload is visible.</span></li>
+          <li><strong>Write down tasks.</strong><span>Add deadlines, priorities, and a realistic estimate for each assignment.</span></li>
+          <li><strong>Reserve study sessions.</strong><span>Choose a subject, a topic, a date, and a duration.</span></li>
+          <li><strong>Mark progress as you go.</strong><span>Completed sessions count toward the weekly goal; finished tasks leave the open list.</span></li>
+        </ol>
+        <p className="build-caption">Your planner data stays in this browser. Add as many subjects as you need.</p>
+      </section>
 
       <section className="build-model panel panel-padding">
         <div className="section-title">
@@ -135,8 +152,8 @@ class StudyPlan {
       <section className="build-steps-section">
         <div className="section-title">
           <div>
-            <p className="eyebrow">From idea to project</p>
-            <h2>Build it in small steps</h2>
+            <p className="eyebrow">Java behind the model</p>
+            <h2>How the concepts build up</h2>
           </div>
         </div>
         <ol className="build-steps">
