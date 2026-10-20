@@ -66,10 +66,11 @@ javac --release 17 -d java-out $(find public/java -name '*.java')
 java -cp java-out studyplanner.lessons.lecture10.StudyResource
 ```
 
-## Deploy
+## Deploy (optional)
 
-Backend sits at `backend/` as its own standalone Maven project (any Java host
-or a small VPS). The front end deploys as a Vercel project rooted at this
-directory — set `NEXT_PUBLIC_API_URL` to the backend URL in the dashboard.
-Authenticate through Vercel's login flow; do not put GitHub tokens in source
-files or commit them.
+The teacher hasn't asked for hosting, so for the course local run (above) is
+all you need. If you ever want it online: host `backend/` on any Java host
+(Render, Railway, a VPS — it needs a filesystem for the H2 data folder), then
+set `NEXT_PUBLIC_API_URL` to the backend URL in the Vercel dashboard for the
+front end (Vercel project rooted at this directory). Do not put GitHub tokens
+in source files or commit them.
