@@ -1,8 +1,11 @@
-package studyplanner.service;
+package studyplanner.logic;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import studyplanner.domain.PlannerSettings;
+import studyplanner.domain.StudySession;
+import studyplanner.domain.Subject;
+import studyplanner.domain.Task;
 import studyplanner.repo.PlannerSettingsRepository;
 import studyplanner.repo.StudySessionRepository;
 import studyplanner.repo.SubjectRepository;
@@ -11,25 +14,19 @@ import studyplanner.repo.TaskRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import studyplanner.domain.StudySession;
-import studyplanner.domain.Subject;
-import studyplanner.domain.Task;
-import studyplanner.dto.ProgressView;
-import studyplanner.dto.SettingsView;
-import studyplanner.dto.SubjectProgress;
-
 /**
- * Computes the dashboard summary: this week (Mon–Sun), how many study
- * minutes are already done, the headline counts and the per-subject bars.
+ * The dashboard calculator - a plain helper class, exactly like the
+ * ProgressCalculator class from Lecture 14.
  *
- * <p>The logic is intentionally beginner style: simple loops over lists
- * and a HashMap that adds up minutes per subject. No streams, no tricks.</p>
+ * It adds up study minutes and builds the summary numbers the web page
+ * shows at the top of the planner. The page receives this summary as JSON
+ * and displays it without doing any math of its own.
  */
 @Service
-@Transactional
 public class ProgressCalculator {
 
     /** If no goal exists yet, 10 hours per week is a sensible start. */
@@ -48,13 +45,15 @@ public class ProgressCalculator {
         this.settings = settings;
     }
 
-    /** Monday of the week that contains today: getDayOfWeek gives 1 for Monday... 7 for Sunday. */
+    /** Monday of the week that contains today. getDayOfWeek gives 1 for Monday... 7 for Sunday. */
     public LocalDate currentWeekStart() {
         LocalDate today = LocalDate.now();
         return today.minusDays(today.getDayOfWeek().getValue() - 1);
     }
 
-    public ProgressView compute() {
+    /** Builds the whole dashboard summary. Returns a Map because Jackson turns
+     *  a Map into JSON exactly as it is written here. */
+    public Map<String, Object> compute() {
         LocalDate today = LocalDate.now();
         LocalDate weekStart = currentWeekStart();
         LocalDate weekEnd = weekStart.plusDays(6);
@@ -74,7 +73,7 @@ public class ProgressCalculator {
             if (!session.getDate().isBefore(weekStart) && !session.getDate().isAfter(weekEnd)) {
                 completedThisWeek = completedThisWeek + minutes;
             }
-            Long subjectId = session.getSubject().getId();
+            Long subjectId = session.getSubjectId();
             Integer old = completedMinutesPerSubject.get(subjectId);
             int newTotal = minutes + (old == null ? 0 : old);
             completedMinutesPerSubject.put(subjectId, newTotal);
@@ -107,7 +106,7 @@ public class ProgressCalculator {
         }
 
         // Step 4: one progress bar per subject.
-        List<SubjectProgress> bars = new ArrayList<SubjectProgress>();
+        List<Map<String, Object>> bars = new ArrayList<Map<String, Object>>();
         for (Subject subject : subjects.findAll()) {
             Integer minutes = completedMinutesPerSubject.get(subject.getId());
             int done = minutes == null ? 0 : minutes;
@@ -115,13 +114,29 @@ public class ProgressCalculator {
             if (subject.getTargetMinutes() > 0) {
                 percent = (int) Math.min(100, Math.round(100.0 * done / subject.getTargetMinutes()));
             }
-            bars.add(new SubjectProgress(
-                    subject.getId(), subject.getCode(), subject.getName(), subject.getColor(),
-                    subject.getTargetMinutes(), done, percent));
+            Map<String, Object> bar = new LinkedHashMap<String, Object>();
+            bar.put("subjectId", subject.getId());
+            bar.put("code", subject.getCode());
+            bar.put("name", subject.getName());
+            bar.put("color", subject.getColor());
+            bar.put("targetMinutes", subject.getTargetMinutes());
+            bar.put("completedMinutes", done);
+            bar.put("percentComplete", percent);
+            bars.add(bar);
         }
 
-        return new ProgressView(weekStart, weekEnd, goal, completedThisWeek, percentOfGoal,
-                openTasks, overdueTasks, upcomingSessions, bars);
+        // Step 5: assemble the summary the page displays.
+        Map<String, Object> summary = new LinkedHashMap<String, Object>();
+        summary.put("weekStart", weekStart);
+        summary.put("weekEnd", weekEnd);
+        summary.put("weeklyGoalMinutes", goal);
+        summary.put("completedMinutesThisWeek", completedThisWeek);
+        summary.put("percentOfGoal", percentOfGoal);
+        summary.put("openTasks", openTasks);
+        summary.put("overdueTasks", overdueTasks);
+        summary.put("upcomingSessions", upcomingSessions);
+        summary.put("subjects", bars);
+        return summary;
     }
 
     public int getWeeklyGoalMinutes() {
@@ -133,7 +148,7 @@ public class ProgressCalculator {
     }
 
     @Transactional
-    public SettingsView saveWeeklyGoal(int weeklyGoalMinutes) {
+    public int saveWeeklyGoal(int weeklyGoalMinutes) {
         PlannerSettings row = settings.findById(PlannerSettings.SINGLETON_ID).orElse(null);
         if (row == null) {
             // The entity starts with id = 1 already, so this becomes the first settings row.
@@ -141,6 +156,7 @@ public class ProgressCalculator {
         } else {
             row.setWeeklyGoalMinutes(weeklyGoalMinutes);
         }
-        return SettingsView.from(settings.save(row));
+        settings.save(row);
+        return row.getWeeklyGoalMinutes();
     }
 }

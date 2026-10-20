@@ -22,8 +22,6 @@ export type Subject = {
 export type Task = {
   id: number;
   subjectId: number;
-  subjectCode: string;
-  subjectName: string;
   title: string;
   dueDate: string;
   estimatedMinutes: number;
@@ -35,7 +33,6 @@ export type Task = {
 export type Session = {
   id: number;
   subjectId: number;
-  subjectName: string;
   topic: string;
   date: string;
   time: string;

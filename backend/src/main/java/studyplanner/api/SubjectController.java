@@ -1,46 +1,55 @@
 package studyplanner.api;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import studyplanner.dto.SubjectRequest;
-import studyplanner.dto.SubjectView;
-import studyplanner.service.PlannerService;
+import org.springframework.web.bind.annotation.*;
+import studyplanner.domain.Subject;
+import studyplanner.repo.StudySessionRepository;
+import studyplanner.repo.SubjectRepository;
+import studyplanner.repo.TaskRepository;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /** Subject endpoints: the course list the rest of the planner hangs from. */
 @RestController
-@RequestMapping("/api/subjects")
 public class SubjectController {
 
-    private final PlannerService planner;
+    private final SubjectRepository subjects;
+    private final TaskRepository tasks;
+    private final StudySessionRepository sessions;
 
-    public SubjectController(PlannerService planner) {
-        this.planner = planner;
+    public SubjectController(SubjectRepository subjects, TaskRepository tasks, StudySessionRepository sessions) {
+        this.subjects = subjects;
+        this.tasks = tasks;
+        this.sessions = sessions;
     }
 
-    @GetMapping
-    public List<SubjectView> list() {
-        return planner.listSubjects();
+    @GetMapping("/api/subjects")
+    public List<Subject> all() {
+        return subjects.findAll();
     }
 
-    @PostMapping
+    /** Adds a subject. Fails when the course code is already in use. */
+    @PostMapping("/api/subjects")
     @ResponseStatus(HttpStatus.CREATED)
-    public SubjectView create(@Valid @RequestBody SubjectRequest request) {
-        return planner.addSubject(request);
+    public Subject create(@RequestBody Subject body) {
+        if (subjects.findByCodeIgnoreCase(body.getCode()).isPresent()) {
+            throw new IllegalArgumentException("A subject with code " + body.getCode() + " already exists.");
+        }
+        return subjects.save(new Subject(
+                body.getCode(), body.getName(), body.getTargetMinutes(), body.getColor()));
     }
 
-    @DeleteMapping("/{id}")
+    /** Removes the subject together with its tasks and sessions. */
+    @DeleteMapping("/api/subjects/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        planner.removeSubject(id);
+    public void remove(@PathVariable Long id) {
+        Subject subject = subjects.findById(id).orElse(null);
+        if (subject == null) {
+            throw new NoSuchElementException("Subject " + id + " does not exist.");
+        }
+        tasks.deleteBySubjectId(subject.getId());
+        sessions.deleteBySubjectId(subject.getId());
+        subjects.delete(subject);
     }
 }

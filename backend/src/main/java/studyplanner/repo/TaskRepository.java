@@ -6,11 +6,11 @@ import studyplanner.domain.Task;
 
 import java.util.List;
 
-/** Data access for study tasks. */
+/** Data access for study tasks. Spring fills in the method bodies for us. */
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    List<Task> findBySubject_Id(Long subjectId);
+    List<Task> findBySubjectId(Long subjectId);
 
     @Transactional
-    void deleteBySubject_Id(Long subjectId);
+    void deleteBySubjectId(Long subjectId);
 }

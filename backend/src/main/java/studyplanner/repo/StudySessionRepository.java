@@ -6,13 +6,11 @@ import studyplanner.domain.StudySession;
 
 import java.util.List;
 
-/** Data access for study sessions. */
+/** Data access for study sessions. Spring fills in the method bodies for us. */
 public interface StudySessionRepository extends JpaRepository<StudySession, Long> {
 
-    List<StudySession> findBySubject_Id(Long subjectId);
-
-    List<StudySession> findByCompletedTrue();
+    List<StudySession> findBySubjectId(Long subjectId);
 
     @Transactional
-    void deleteBySubject_Id(Long subjectId);
+    void deleteBySubjectId(Long subjectId);
 }

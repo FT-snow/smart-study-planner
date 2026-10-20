@@ -2,12 +2,9 @@ package studyplanner.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
@@ -15,6 +12,7 @@ import java.time.LocalTime;
 
 /**
  * One focused study session: what topic, on which day and time, how long.
+ * Like Task, it keeps the subject as a plain id number.
  */
 @Entity
 @Table(name = "study_sessions")
@@ -24,9 +22,9 @@ public class StudySession implements Completable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "subject_id", nullable = false)
-    private Subject subject;
+    /** Which subject this session belongs to (the subject's id number). */
+    @Column(nullable = false)
+    private Long subjectId;
 
     @Column(nullable = false, length = 120)
     private String topic;
@@ -46,15 +44,19 @@ public class StudySession implements Completable {
         // A no-argument constructor is required by persistence, keep it.
     }
 
-    public StudySession(Subject subject, String topic, LocalDate date, LocalTime time, int durationMinutes) {
-        if (subject == null) {
-            throw new IllegalArgumentException("A session must belong to a subject.");
-        }
+    public StudySession(Long subjectId, String topic, LocalDate date, LocalTime time, int durationMinutes) {
+        setSubjectId(subjectId);
         setTopic(topic);
         setDate(date);
         setTime(time);
         setDurationMinutes(durationMinutes);
-        this.subject = subject;
+    }
+
+    public void setSubjectId(Long subjectId) {
+        if (subjectId == null) {
+            throw new IllegalArgumentException("A session must be connected to a subject.");
+        }
+        this.subjectId = subjectId;
     }
 
     public void setTopic(String topic) {
@@ -108,8 +110,8 @@ public class StudySession implements Completable {
         return id;
     }
 
-    public Subject getSubject() {
-        return subject;
+    public Long getSubjectId() {
+        return subjectId;
     }
 
     public String getTopic() {
@@ -128,7 +130,6 @@ public class StudySession implements Completable {
         return durationMinutes;
     }
 
-    /** The promise made to the Completable interface (Lecture 30). */
     @Override
     public boolean isCompleted() {
         return completed;
@@ -136,6 +137,6 @@ public class StudySession implements Completable {
 
     @Override
     public String toString() {
-        return topic + " · " + date + " " + time + " (" + durationMinutes + " min)";
+        return topic + " - " + date + " " + time + " (" + durationMinutes + " min)";
     }
 }

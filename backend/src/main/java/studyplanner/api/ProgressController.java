@@ -1,25 +1,24 @@
 package studyplanner.api;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import studyplanner.dto.ProgressView;
-import studyplanner.service.ProgressCalculator;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import studyplanner.logic.ProgressCalculator;
 
-/**
- * Dashboard summary: weekly goal progress, headline counts, per-subject
- * bars. All numbers are computed by Java, not the browser.
- */
+import java.util.Map;
+
+/** The dashboard summary: week bounds, goal progress, headline counts,
+ *  and one progress bar per subject. Everything is computed by Java. */
 @RestController
 public class ProgressController {
 
-    private final ProgressCalculator progressCalculator;
+    private final ProgressCalculator calculator;
 
-    public ProgressController(ProgressCalculator progressCalculator) {
-        this.progressCalculator = progressCalculator;
+    public ProgressController(ProgressCalculator calculator) {
+        this.calculator = calculator;
     }
 
     @GetMapping("/api/progress")
-    public ProgressView progress() {
-        return progressCalculator.compute();
+    public Map<String, Object> progress() {
+        return calculator.compute();
     }
 }

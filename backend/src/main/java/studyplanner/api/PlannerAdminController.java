@@ -1,25 +1,22 @@
 package studyplanner.api;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import studyplanner.bootstrap.SamplePlanService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import studyplanner.bootstrap.SamplePlanBootstrap;
 
 /** Restores the sample subjects, tasks, and sessions. */
 @RestController
-@RequestMapping("/api/planner")
 public class PlannerAdminController {
 
-    private final SamplePlanService samplePlanService;
+    private final SamplePlanBootstrap bootstrap;
 
-    public PlannerAdminController(SamplePlanService samplePlanService) {
-        this.samplePlanService = samplePlanService;
+    public PlannerAdminController(SamplePlanBootstrap bootstrap) {
+        this.bootstrap = bootstrap;
     }
 
-    @PostMapping("/reset")
-    public ResponseEntity<Void> reset() {
-        samplePlanService.resetToSamplePlan();
-        return ResponseEntity.noContent().build();
+    @PostMapping("/api/planner/reset")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reset() {
+        bootstrap.resetToSamplePlan();
     }
 }

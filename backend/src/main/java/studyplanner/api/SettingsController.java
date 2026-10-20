@@ -1,33 +1,40 @@
 package studyplanner.api;
 
-import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import studyplanner.dto.SettingsRequest;
-import studyplanner.dto.SettingsView;
-import studyplanner.service.ProgressCalculator;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import studyplanner.logic.ProgressCalculator;
 
-/** Weekly goal settings. */
+import java.util.HashMap;
+import java.util.Map;
+
+/** Reads and saves the weekly study goal (in minutes). */
 @RestController
-@RequestMapping("/api/settings")
 public class SettingsController {
 
-    private final ProgressCalculator progressCalculator;
+    private final ProgressCalculator calculator;
 
-    public SettingsController(ProgressCalculator progressCalculator) {
-        this.progressCalculator = progressCalculator;
+    public SettingsController(ProgressCalculator calculator) {
+        this.calculator = calculator;
     }
 
-    @GetMapping
-    public SettingsView get() {
-        return new SettingsView(progressCalculator.getWeeklyGoalMinutes());
+    @GetMapping("/api/settings")
+    public Map<String, Object> get() {
+        Map<String, Object> settings = new HashMap<String, Object>();
+        settings.put("weeklyGoalMinutes", calculator.getWeeklyGoalMinutes());
+        return settings;
     }
 
-    @PutMapping
-    public SettingsView update(@Valid @RequestBody SettingsRequest request) {
-        return progressCalculator.saveWeeklyGoal(request.getWeeklyGoalMinutes());
+    @PutMapping("/api/settings")
+    public Map<String, Object> update(@RequestBody Map<String, Object> body) {
+        Object value = body.get("weeklyGoalMinutes");
+        if (!(value instanceof Number)) {
+            // Wrong JSON or the field is missing -> treated as a client mistake (400).
+            throw new IllegalArgumentException("Weekly goal is required as a number of minutes.");
+        }
+        int saved = calculator.saveWeeklyGoal(((Number) value).intValue());
+
+        Map<String, Object> settings = new HashMap<String, Object>();
+        settings.put("weeklyGoalMinutes", saved);
+        return settings;
     }
 }
