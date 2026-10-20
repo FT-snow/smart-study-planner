@@ -1,8 +1,19 @@
+# Backend
+backend/target/
+backend/data/
+*.log
+
+# Frontend
 node_modules/
 .next/
-.vercel/
-.env*
-!.env.example
-*.tsbuildinfo
-java-out/
-.vercel
+out/
+next-env.d.ts
+
+# Env files
+.env
+.env.local
+.env*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db

@@ -1,0 +1,311 @@
+================================================================================
+SMART STUDY PLANNER - JAVA CONCEPTS USED IN THE BACKEND, EXPLAINED SIMPLY
+================================================================================
+
+This file explains every Java (OOP) concept the Spring Boot backend uses, in
+plain words. For each concept you get:
+
+  WHAT it means            -> one short sentence
+  WHERE to see it          -> the exact file (all under backend/src/main/java/)
+  WHY it is there          -> what it buys us in this project
+
+The lecture numbers refer to the CSC2104 lessons that already live in
+public/java/studyplanner/lessons/ - so every idea in the backend has a direct
+relative among the demos you compiled during lectures.
+
+
+--------------------------------------------------------------------------------
+1. CLASSES AND OBJECTS  (Lectures 01-02, 10, 13)
+--------------------------------------------------------------------------------
+WHAT: A class is a blueprint; an object is a real thing built from that
+      blueprint, holding its own data.
+
+WHERE:  domain/Subject.java  domain/Task.java  domain/StudySession.java
+
+WHY: Think of Subject.class as the form "course" - the plan for what every
+     course must contain (code, name, weekly target). Each new course you add
+     on the page creates one object from that form. `new Subject("CSC2104",
+     "Java OOP", 240, "blue")` builds one real object with those values.
+
+
+--------------------------------------------------------------------------------
+2. ENCAPSULATION - private fields + getters + setters  (Lecture 18)
+--------------------------------------------------------------------------------
+WHAT: Hide the data inside a class (private), and let outside code touch it
+      only through controlled methods (public getters and setters).
+
+WHERE: every domain class, e.g. Subject.setTargetMinutes():
+
+    public void setTargetMinutes(int targetMinutes) {
+        if (targetMinutes < 15 || targetMinutes > 2400) {
+            throw new IllegalArgumentException("Weekly target must be...");
+        }
+        this.targetMinutes = targetMinutes;
+    }
+
+WHY: No code anywhere can slip in a target of -50 hours or an empty course
+     name. The object protects itself: bad data simply cannot exist. This is
+     why the API returns friendly 400 errors - the guard lives right next to
+     the field it protects.
+
+
+--------------------------------------------------------------------------------
+3. CONSTRUCTORS  (Lecture 02)
+--------------------------------------------------------------------------------
+WHAT: A special method with the same name as the class that runs when an
+      object is born, used to set it up.
+
+WHERE: Subject(String code, String name, int targetMinutes, String color)
+       Task(Subject subject, String title, LocalDate dueDate, ...)
+
+WHY: A task cannot exist without a subject, so the constructor demands one.
+     It also validates right away, so a finished construction is a valid
+     object ("constructors and object setup" - with Case constructors).
+
+
+--------------------------------------------------------------------------------
+4. THE static AND final KEYWORDS  (Lecture 19)
+--------------------------------------------------------------------------------
+WHAT: static means "belongs to the class itself, not to one object". final
+      means "this value can never change after it is set".
+
+WHERE: domain/PlannerSettings.java:
+
+    public static final long SINGLETON_ID = 1L;
+
+WHY: There is exactly one settings row, and its id is always 1 - forever.
+     static makes it available without an object; final makes changing it a
+     compile error. Same pattern: ProgressCalculator.DEFAULT_WEEKLY_GOAL_MINUTES.
+
+
+--------------------------------------------------------------------------------
+5. INTERFACES  (Lectures 29-30)
+--------------------------------------------------------------------------------
+WHAT: An interface is a promise-list: names of methods a class agrees to have,
+      with no implementation given.
+
+WHERE: domain/Completable.java:
+
+    public interface Completable {
+        boolean isCompleted();
+    }
+    // and then: public class Task implements Completable { ... }
+    //            public class StudySession implements Completable { ... }
+
+WHY: Tasks and sessions are different things, but both can be finished. The
+     interface lets the planner say "anything Completable knows how to report
+     its done-ness" without caring which type it is. Exactly the idea from
+     Lecture 30's Trackable demo.
+
+
+--------------------------------------------------------------------------------
+6. ENUMS  (Lecture 05 - fixed sets of constants)
+--------------------------------------------------------------------------------
+WHAT: An enum creates a small fixed type with a limited set of named values.
+
+WHERE: domain/Priority.java - LOW(1), MEDIUM(2), HIGH(3), each with a weight.
+
+WHY: A priority can ONLY be one of the three, never "urgent!!!" or "" - the
+     compiler enforces the course-list. Every task then carries a Priority
+     object instead of a loose String, and the weight lets us rank HIGH above
+     LOW without string comparisons.
+
+
+--------------------------------------------------------------------------------
+7. INHERITANCE  (Lectures 22-24, 26)
+--------------------------------------------------------------------------------
+WHAT: A class can extend another class: the child receives the parent's code
+      and adds or overrides behavior.
+
+WHERE: exception/PlannerException.java + its children:
+
+    public abstract class PlannerException extends RuntimeException { }
+    public class NotFoundException extends PlannerException { }
+    public class BadRequestException extends PlannerException { }
+
+WHY: Both error kinds are planner errors, so they share the parent's
+     constructor. One catch-block (PlannerException) can treat them alike -
+     the IS-A relationship from Lecture 22, used for error classes.
+
+
+--------------------------------------------------------------------------------
+8. METHOD OVERRIDING AND POLYMORPHISM  (Lectures 27-28, 30)
+--------------------------------------------------------------------------------
+WHAT: Overriding = a child replaces a method it inherited. Polymorphism = the
+      same method call runs different code depending on the real object.
+
+WHERE: every domain class overrides toString() (the version from the Object
+       class), e.g. Subject.toString() -> "CSC2104 . Java OOP";
+       Task and StudySession each give their own isCompleted() body that the
+       Completable interface required; PlannerService uses anonymous classes
+       for comparators (Lecture 21):
+
+        open.sort(new Comparator<Task>() {
+            public int compare(Task a, Task b) { ... }
+        });
+
+WHY: toString() proves overriding in action (open/debug print any planner item
+     and it describes itself). The anonymous Comparator is the same "one-off
+     class written at the call site" trick from Lecture 21, reused where
+
+
+--------------------------------------------------------------------------------
+9. COMPOSITION - HAS-A relationships  (Lecture 31)
+--------------------------------------------------------------------------------
+WHAT: Instead of inheriting, an object holds a reference to another object. A
+      Task IS-A Completable but it HAS-A Subject.
+
+WHERE: domain/Task.java and domain/StudySession.java:
+
+    @ManyToOne ... private Subject subject;
+
+WHY: The task does not copy name/code from the subject - it points at the
+     one true Subject object. That is why removing a subject on the page
+     removes all of its tasks and sessions at once: they belong to it via
+     this reference (see PlannerService.removeSubject).
+
+
+--------------------------------------------------------------------------------
+10. COLLECTIONS - List, ArrayList, HashMap  (Lecture 09 + practice sessions)
+--------------------------------------------------------------------------------
+WHAT: Objects that hold many other objects. ArrayList is a growable list;
+      HashMap stores key -> value pairs.
+
+WHERE: service/PlannerService.java and service/ProgressCalculator.java:
+
+    List<Task> open = new ArrayList<Task>();
+    Map<Long, Integer> completedMinutesPerSubject = new HashMap<Long, Integer>();
+
+WHY: The dashboard numbers are plain accumulation loops: for every finished
+     session in the week, add its minutes to the week total AND to the map
+     entry of its subject (HashMap.get + put). This replaces the formulas the
+     page used to compute itself in JavaScript - now Java computes the truth
+     and the page just displays it.
+
+
+--------------------------------------------------------------------------------
+11. DECISIONS AND LOOPS - if / else, for-each  (Lectures 05-06)
+--------------------------------------------------------------------------------
+WHAT: The everyday control flow of Java: if conditions and for (item : list).
+
+WHERE: ProgressCalculator.compute() and the validators in every setter.
+
+WHY: Deliberately chosen over advanced "streams" so every line stays
+     classroom-readable: `for (Task task : allTasks) { if (!task.isCompleted())
+     openTasks++; }` is Lecture 06 applied to real work.
+
+
+--------------------------------------------------------------------------------
+12. CUSTOM EXCEPTIONS - throw, throws, try/catch  (Lectures 36-38)
+--------------------------------------------------------------------------------
+WHAT: Java's system for signaling that something went wrong. You can define
+      your own exception classes and throw them with meaningful messages.
+
+WHERE: exception/PlannerException family, plus every  "throw new ..."  in
+       domain setters and service methods (findSubject -> NotFoundException).
+       api/ApiExceptionHandler catches them and turns them into clean JSON:
+
+        @ExceptionHandler(NotFoundException.class)
+        public ResponseEntity<ApiError> notFound(NotFoundException exception) { ... }
+
+WHY: Business rules become readable - "Task 999 does not exist." instead of a
+     scary null-pointer crash. The @ExceptionHandler blocks are the web
+     version of Lecture 37's try/catch/finally: the error is caught in one
+     central place and translated for the browser.
+
+
+--------------------------------------------------------------------------------
+13. DATES AND TIME - java.time  (Lecture 03-05 data types, older than LocalDate)
+--------------------------------------------------------------------------------
+WHAT: Java's modern date types. LocalDate = a calendar date ("2026-10-21"),
+      LocalTime = a clock time ("16:30").
+
+WHERE: domain/Task.dueDate, domain/StudySession.date/.time, and currentWeekStart()
+       in ProgressCalculator (Monday of this week: today minus weekday-1).
+
+WHY: The old page stored dates as strings and compared them with
+     localeCompare. Java compares real dates - `dueDate.isBefore(today)` -
+     which is what powers the overdue flag:  !completed && dueDate.isBefore(today)
+
+
+--------------------------------------------------------------------------------
+14. THE DTO PATTERN - view objects returned by the service  (Lecture 17)
+--------------------------------------------------------------------------------
+WHAT: A DTO ("data transfer object") is a plain class whose only job is to
+      carry values across a boundary - here, from Java to the web page.
+
+WHERE: dto/SubjectView.java  dto/TaskView.java  dto/SessionView.java
+       dto/ProgressView.java  dto/SubjectProgress.java
+       dto/SubjectRequest.java (and the other requests, coming the other way)
+
+WHY: The page must never receive raw persistence objects. Each View is built
+     with a static factory `from(...)` (Lecture 17: returning objects) while
+     the data is still fresh, so the page always gets a complete, safe copy.
+
+
+--------------------------------------------------------------------------------
+15. THE SERVICE LAYER - all rules in one place  (Lecture 14 ProgressCalculator)
+--------------------------------------------------------------------------------
+WHAT: A service is a class that owns the "verbs" of the app (add, toggle,
+      remove, compute) while the domain classes own the "nouns".
+
+WHERE: service/PlannerService.java (write rules: one course-code per subject,
+       priorities parsed, duplicate checks) and service/ProgressCalculator.java
+       (read rules: the whole dashboard summary).
+
+WHY: The name ProgressCalculator comes straight from Lecture 14. The page
+     used to sort, filter, add percentages in the browser; now every one of
+     those rules is a Java method the page can only call - never bypass.
+
+
+--------------------------------------------------------------------------------
+16. SPRING BOOT - the glue that makes it a working web app  (beyond lectures)
+--------------------------------------------------------------------------------
+WHAT: Spring Boot is a Java framework. You describe what you need (a
+      repository, a REST endpoint), the framework builds the plumbing.
+
+WHERE: StudyPlannerApplication.java (the start button),
+       api/*Controller.java (each method = one URL, e.g. GET /api/tasks),
+       repo/*Repository.java (empty interfaces - Spring writes the SQL),
+       bootstrap/SamplePlanService.java (creates the 4 sample subjects the
+       first time you run it).
+
+WHY: Without Spring this would all stay a console app. It is still the same
+     Java you learned - plain classes, loops, conditions, interfaces - only
+     now reachable from a browser. The Java code you wrote in lectures did
+     not change in spirit; it just grew an address.
+
+
+================================================================================
+ONE-MINUTE MAP - CONCEPT -> LECTURE -> BACKEND FILE
+================================================================================
+
+  Classes & objects ............ L01-02 .... domain/Subject.java
+  Constructors ................. L02 ....... domain/Task.java (constructor)
+  Data types ................... L03 ....... int/String/boolean everywhere
+  Decisions .................... L05 ....... if checks in every setter
+  Loops ........................ L06 ....... for (item : list) in services
+  Arrays/ArrayList ............. L09 ....... List<Task> in PlannerService
+  Objects returning objects .... L17 ....... dto/*.from(...)
+  Access control ............... L18 ....... private fields + public setters
+  final / static ............... L19 ....... PlannerSettings.SINGLETON_ID
+  Nested/anonymous classes ..... L21 ....... sort(new Comparator<Task>() { })
+  Inheritance .................. L22-24 .... PlannerException family
+  Overriding ................... L27 ....... toString() in every domain class
+  Polymorphism ................. L28-30 .... Completable + Comparator
+  Interfaces ................... L29-30 .... domain/Completable.java
+  Composition vs inheritance ... L31 ....... Task HAS-A Subject
+  Exceptions ................... L36-38 .... throw new NotFoundException
+  try/catch JSON handler ...... L37 ....... api/ApiExceptionHandler.java
+  Custom exception classes ..... L38 ....... exception/BadRequestException
+
+
+Questions like "where is encapsulation really used?" - answer: every setter in
+the domain package guards a rule; open any of them and read the if-block.
+
+================================================================================
+(Post-lecture note: console input L32, file handling L33-35 and threads L40-48
+are not needed by the backend itself - the browser passes input over HTTP,
+persistence is handled by the H2 database file in backend/data/, and the web
+server already manages threads. The concepts remain in the lesson files.)
+================================================================================

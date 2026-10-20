@@ -1,17 +1,64 @@
-# Smart Study Planner — CSC2104 Java OOP
+# Smart Study Planner — Java OOP
 
-A student-focused study planner and CSC2104 learning project. Organize subjects, weekly goals, tasks, and study sessions, then explore all 48 Java topics through examples from the planner. The interface uses TypeScript, Tailwind CSS v4, a shadcn-compatible `components/ui` structure, Motion, and Lucide icons.
+A student-focused study planner built as a **real Java project**: a Spring Boot
+backend owns all subjects, tasks, study sessions and weekly-goal logic, and a
+Next.js front end is only its client. Explore the 48 CSC2104 Java lecture
+topics through the Concepts page, and let the app itself run on the same ideas.
+
+- **`backend/`** — the Java application (Spring Boot, JPA, H2). Every planner
+  rule — sorting, overdue flags, weekly goal math, validation — lives here in
+  simple, classroom-style Java. See `JAVA_CONCEPTS_EXPLAINED.txt` for a
+  concept-by-concept walkthrough.
+- **`app/` + `lib/`** — the Next.js UI. Pages fetch from the Java API; no
+  planner logic lives in the browser anymore.
 
 ## Pages
 
-- `/` — simple student workflow and links into the planner
-- `/planner` — manage subjects, tasks, study sessions, and a weekly goal
-- `/concepts` — searchable lectures 1–48, actual Java source files, copy-code, sample output, and local lesson progress
-- `/build` — how a student uses the planner and how the Java model fits together
+- `/planner` — manage subjects, tasks, and sessions; progress comes from `GET /api/progress`.
+- `/concepts` — searchable lectures 1–48 with the actual Java source files.
+- `/build` — how a student uses the planner and how the Java model fits together.
 
-The Java files are in `public/java/studyplanner/lessons/lectureNN/`; the Concepts page loads those files directly. Planner data and lesson progress are saved in this browser. The browser displays Java source but does not execute it; the console output is a teaching preview.
+## API (Spring Boot, port 8080)
 
-To compile the Java lessons locally with JDK 17 or newer:
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET/POST | `/api/subjects` | list · create (duplicate codes rejected) |
+| DELETE | `/api/subjects/{id}` | removes the subject **and** its tasks/sessions |
+| GET/POST | `/api/tasks` | list (open first, sorted by due date) · create |
+| PATCH | `/api/tasks/{id}/toggle` | complete / reopen |
+| GET/POST | `/api/sessions` | list (soonest first) · schedule |
+| PATCH | `/api/sessions/{id}/toggle` | mark done / unmark |
+| GET | `/api/progress` | week bounds, goal %, per-subject bars (computed in Java) |
+| GET/PUT | `/api/settings` | weekly goal in minutes |
+| POST | `/api/planner/reset` | restore the sample plan |
+
+Errors are plain JSON: `{"status": 400, "message": "...", "errors": []}`.
+
+## Run the backend
+
+Needs JDK 17+ and Maven.
+
+```sh
+cd backend
+mvn spring-boot:run
+```
+
+Data persists to `backend/data/` (H2 file database). Delete that folder for a
+factory reset, or use the reset endpoint/button. First launch seeds the sample
+subjects, tasks, and sessions automatically.
+
+## Run the front end
+
+```sh
+bun install        # or npm install
+bun run dev        # or npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The page talks to
+`http://localhost:8080` by default; set `NEXT_PUBLIC_API_URL` to change it.
+Start the backend first, or you will see its "Retry" message.
+
+The Java lecture sources still compile on their own:
 
 ```sh
 mkdir -p java-out
@@ -19,20 +66,10 @@ javac --release 17 -d java-out $(find public/java -name '*.java')
 java -cp java-out studyplanner.lessons.lecture10.StudyResource
 ```
 
-## Run with Bun
-
-```sh
-bun install
-bun run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-```sh
-bun run build
-bun run start
-```
-
 ## Deploy
 
-Use this directory as the Vercel project root. Deploy through the Vercel CLI or connect a Git repository in Vercel. Authenticate through Vercel's login flow; do not put GitHub tokens in source files or commit them.
+Backend sits at `backend/` as its own standalone Maven project (any Java host
+or a small VPS). The front end deploys as a Vercel project rooted at this
+directory — set `NEXT_PUBLIC_API_URL` to the backend URL in the dashboard.
+Authenticate through Vercel's login flow; do not put GitHub tokens in source
+files or commit them.
