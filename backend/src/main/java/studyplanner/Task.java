@@ -1,4 +1,4 @@
-package studyplanner.domain;
+package studyplanner;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,8 +10,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 /**
- * A study task: one small piece of work, stored with two numbers
- * (its own id and the id of its subject) plus its details.
+ * A study task: one small piece of work, stored with two numbers (its own id
+ * and the id of its subject) plus its details.
  */
 @Entity
 @Table(name = "tasks")
@@ -21,7 +21,7 @@ public class Task implements Completable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Which subject this task belongs to. Stored as the subject's id number. */
+    /** Which subject this task belongs to (the subject's id number). */
     @Column(nullable = false)
     private Long subjectId;
 
@@ -34,7 +34,7 @@ public class Task implements Completable {
     @Column(nullable = false)
     private int estimatedMinutes;
 
-    /** Priority written as text: "Low", "Medium" or "High". */
+    /** Priority written as simple text: "Low", "Medium" or "High". */
     @Column(nullable = false, length = 10)
     private String priority;
 
@@ -96,12 +96,10 @@ public class Task implements Completable {
         }
     }
 
-    /** Changes status to done. */
     public void markCompleted() {
         completed = true;
     }
 
-    /** Changes status back to open. */
     public void reopen() {
         completed = false;
     }

@@ -4,11 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Smart Study Planner backend.
+ * The start button of the Smart Study Planner backend.
  *
- * <p>A Spring Boot REST API that owns all planner data and business rules
- * (subjects, tasks, study sessions, weekly goals). The Next.js front end in
- * the repository root is a pure client of this API.</p>
+ * Run it, and a web server starts on localhost:8080 that keeps every
+ * subject, task and study session and answers the planner page.
  */
 @SpringBootApplication
 public class StudyPlannerApplication {

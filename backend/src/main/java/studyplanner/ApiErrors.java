@@ -1,4 +1,4 @@
-package studyplanner.api;
+package studyplanner;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
  * answer politely, instead of letting the app die mid-request.
  */
 @RestControllerAdvice
-public class ApiExceptionHandler {
+public class ApiErrors {
 
     /** 400: a value was rejected by a setter or a controller rule. */
     @ExceptionHandler(IllegalArgumentException.class)

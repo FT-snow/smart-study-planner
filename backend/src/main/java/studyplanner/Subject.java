@@ -1,4 +1,4 @@
-package studyplanner.domain;
+package studyplanner;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,12 +7,23 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.LocalDate;
+
 /**
- * A subject (course) the student is studying, e.g. "CSC2104 Java OOP".
+ * The Completable interface (Lecture 30): a promise that work can report
+ * whether it is done. It lives here next to Task so the project needs one
+ * file fewer; StudySession (further down the folder) makes the same promise.
+ */
+interface Completable {
+
+    boolean isCompleted();
+}
+
+/**
+ * A subject (course) the student studies, e.g. "CSC2104 Java OOP".
  *
- * <p>Encapsulation (Lecture 18): every field is private, values can only
- * enter through constructors and setters that check the data first, and
- * outside code reads values through getters.</p>
+ * Encapsulation (Lecture 18): the fields are private; values enter only
+ * through setters that check them, and outside code reads via getters.
  */
 @Entity
 @Table(name = "subjects")
@@ -32,7 +43,7 @@ public class Subject {
     @Column(nullable = false)
     private int targetMinutes;
 
-    /** Label color for the web page: blue, gold, green or violet. */
+    /** Label color for the page: blue, gold, green or violet. */
     @Column(nullable = false, length = 20)
     private String color;
 
@@ -100,6 +111,6 @@ public class Subject {
     /** Method overriding (Lecture 27): we replace the version from Object. */
     @Override
     public String toString() {
-        return code + " · " + name;
+        return code + " - " + name;
     }
 }

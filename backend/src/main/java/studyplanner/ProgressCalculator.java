@@ -1,15 +1,6 @@
-package studyplanner.logic;
+package studyplanner;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import studyplanner.domain.PlannerSettings;
-import studyplanner.domain.StudySession;
-import studyplanner.domain.Subject;
-import studyplanner.domain.Task;
-import studyplanner.repo.PlannerSettingsRepository;
-import studyplanner.repo.StudySessionRepository;
-import studyplanner.repo.SubjectRepository;
-import studyplanner.repo.TaskRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,29 +11,46 @@ import java.util.Map;
 
 /**
  * The dashboard calculator - a plain helper class, exactly like the
- * ProgressCalculator class from Lecture 14.
+ * ProgressCalculator class from Lecture 14. It adds up study minutes and
+ * builds the summary the page shows at the top of the planner.
  *
- * It adds up study minutes and builds the summary numbers the web page
- * shows at the top of the planner. The page receives this summary as JSON
- * and displays it without doing any math of its own.
+ * Logic style: simple loops, a HashMap for the per-subject totals, and
+ * one Map at the end that is sent to the page as JSON.
  */
 @Service
 public class ProgressCalculator {
 
-    /** If no goal exists yet, 10 hours per week is a sensible start. */
+    /** If the student has not chosen a goal yet, 10 hours per week. */
     public static final int DEFAULT_WEEKLY_GOAL_MINUTES = 600;
+
+    /**
+     * The weekly goal lives in one static field (Lecture 19: static belongs
+     * to the class itself, not to an object). It keeps its value while the
+     * app is running; subjects, tasks and sessions keep theirs forever,
+     * because those are saved in the database.
+     */
+    private static int weeklyGoalMinutes = DEFAULT_WEEKLY_GOAL_MINUTES;
 
     private final TaskRepository tasks;
     private final StudySessionRepository sessions;
     private final SubjectRepository subjects;
-    private final PlannerSettingsRepository settings;
 
-    public ProgressCalculator(TaskRepository tasks, StudySessionRepository sessions,
-                              SubjectRepository subjects, PlannerSettingsRepository settings) {
+    public ProgressCalculator(TaskRepository tasks, StudySessionRepository sessions, SubjectRepository subjects) {
         this.tasks = tasks;
         this.sessions = sessions;
         this.subjects = subjects;
-        this.settings = settings;
+    }
+
+    public static int getWeeklyGoalMinutes() {
+        return weeklyGoalMinutes;
+    }
+
+    /** A goal between 1 and 80 hours per week keeps the plan realistic. */
+    public static void setWeeklyGoalMinutes(int minutes) {
+        if (minutes < 60 || minutes > 4800) {
+            throw new IllegalArgumentException("Weekly goal must be between 60 and 4800 minutes.");
+        }
+        weeklyGoalMinutes = minutes;
     }
 
     /** Monday of the week that contains today. getDayOfWeek gives 1 for Monday... 7 for Sunday. */
@@ -51,21 +59,17 @@ public class ProgressCalculator {
         return today.minusDays(today.getDayOfWeek().getValue() - 1);
     }
 
-    /** Builds the whole dashboard summary. Returns a Map because Jackson turns
-     *  a Map into JSON exactly as it is written here. */
     public Map<String, Object> compute() {
         LocalDate today = LocalDate.now();
         LocalDate weekStart = currentWeekStart();
         LocalDate weekEnd = weekStart.plusDays(6);
 
-        List<StudySession> allSessions = sessions.findAll();
-        List<Task> allTasks = tasks.findAll();
-
-        // Step 1: minutes completed inside the current week, and minutes per subject.
+        // Step 1: minutes completed inside the current week, plus a running
+        // total per subject stored in a HashMap.
         int completedThisWeek = 0;
         Map<Long, Integer> completedMinutesPerSubject = new HashMap<Long, Integer>();
 
-        for (StudySession session : allSessions) {
+        for (StudySession session : sessions.findAll()) {
             if (!session.isCompleted()) {
                 continue; // only finished sessions count
             }
@@ -75,14 +79,13 @@ public class ProgressCalculator {
             }
             Long subjectId = session.getSubjectId();
             Integer old = completedMinutesPerSubject.get(subjectId);
-            int newTotal = minutes + (old == null ? 0 : old);
-            completedMinutesPerSubject.put(subjectId, newTotal);
+            completedMinutesPerSubject.put(subjectId, minutes + (old == null ? 0 : old));
         }
 
         // Step 2: headline counts.
         int openTasks = 0;
         int overdueTasks = 0;
-        for (Task task : allTasks) {
+        for (Task task : tasks.findAll()) {
             if (!task.isCompleted()) {
                 openTasks = openTasks + 1;
             }
@@ -92,17 +95,16 @@ public class ProgressCalculator {
         }
 
         int upcomingSessions = 0;
-        for (StudySession session : allSessions) {
+        for (StudySession session : sessions.findAll()) {
             if (!session.isCompleted()) {
                 upcomingSessions = upcomingSessions + 1;
             }
         }
 
         // Step 3: the weekly goal progress, capped at 100 percent.
-        int goal = getWeeklyGoalMinutes();
         int percentOfGoal = 0;
-        if (goal > 0) {
-            percentOfGoal = (int) Math.min(100, Math.round(100.0 * completedThisWeek / goal));
+        if (weeklyGoalMinutes > 0) {
+            percentOfGoal = (int) Math.min(100, Math.round(100.0 * completedThisWeek / weeklyGoalMinutes));
         }
 
         // Step 4: one progress bar per subject.
@@ -129,7 +131,7 @@ public class ProgressCalculator {
         Map<String, Object> summary = new LinkedHashMap<String, Object>();
         summary.put("weekStart", weekStart);
         summary.put("weekEnd", weekEnd);
-        summary.put("weeklyGoalMinutes", goal);
+        summary.put("weeklyGoalMinutes", weeklyGoalMinutes);
         summary.put("completedMinutesThisWeek", completedThisWeek);
         summary.put("percentOfGoal", percentOfGoal);
         summary.put("openTasks", openTasks);
@@ -137,26 +139,5 @@ public class ProgressCalculator {
         summary.put("upcomingSessions", upcomingSessions);
         summary.put("subjects", bars);
         return summary;
-    }
-
-    public int getWeeklyGoalMinutes() {
-        PlannerSettings row = settings.findById(PlannerSettings.SINGLETON_ID).orElse(null);
-        if (row == null) {
-            return DEFAULT_WEEKLY_GOAL_MINUTES;
-        }
-        return row.getWeeklyGoalMinutes();
-    }
-
-    @Transactional
-    public int saveWeeklyGoal(int weeklyGoalMinutes) {
-        PlannerSettings row = settings.findById(PlannerSettings.SINGLETON_ID).orElse(null);
-        if (row == null) {
-            // The entity starts with id = 1 already, so this becomes the first settings row.
-            row = new PlannerSettings(weeklyGoalMinutes);
-        } else {
-            row.setWeeklyGoalMinutes(weeklyGoalMinutes);
-        }
-        settings.save(row);
-        return row.getWeeklyGoalMinutes();
     }
 }

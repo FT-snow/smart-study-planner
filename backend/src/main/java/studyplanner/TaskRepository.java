@@ -1,12 +1,11 @@
-package studyplanner.repo;
+package studyplanner;
 
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import studyplanner.domain.Task;
 
 import java.util.List;
 
-/** Data access for study tasks. Spring fills in the method bodies for us. */
+/** Data access for study tasks. */
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findBySubjectId(Long subjectId);

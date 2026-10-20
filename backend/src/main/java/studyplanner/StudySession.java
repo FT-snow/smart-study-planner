@@ -1,4 +1,4 @@
-package studyplanner.domain;
+package studyplanner;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,7 +12,6 @@ import java.time.LocalTime;
 
 /**
  * One focused study session: what topic, on which day and time, how long.
- * Like Task, it keeps the subject as a plain id number.
  */
 @Entity
 @Table(name = "study_sessions")

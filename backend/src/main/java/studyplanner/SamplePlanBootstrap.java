@@ -1,16 +1,8 @@
-package studyplanner.bootstrap;
+package studyplanner;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import studyplanner.domain.PlannerSettings;
-import studyplanner.domain.StudySession;
-import studyplanner.domain.Subject;
-import studyplanner.domain.Task;
-import studyplanner.repo.PlannerSettingsRepository;
-import studyplanner.repo.StudySessionRepository;
-import studyplanner.repo.SubjectRepository;
-import studyplanner.repo.TaskRepository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,36 +10,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One small class with two jobs:
+ * Two jobs in one small class:
  *   1. when the app starts, create the sample plan (if nothing exists yet);
- *   2. restore that same sample plan when the "Reset sample planner"
- *      button on the page is pressed (POST /api/planner/reset).
+ *   2. restore that plan when the "Reset sample planner" button is pressed.
  *
- * Dates are always computed from today so the sample plan looks fresh.
+ * Dates are computed from today so the sample plan always looks fresh.
  */
 @Component
 public class SamplePlanBootstrap implements CommandLineRunner {
 
-    private static final int SAMPLE_WEEKLY_GOAL_MINUTES = 600;
-
     private final SubjectRepository subjects;
     private final TaskRepository tasks;
     private final StudySessionRepository sessions;
-    private final PlannerSettingsRepository settings;
 
-    public SamplePlanBootstrap(SubjectRepository subjects, TaskRepository tasks,
-                               StudySessionRepository sessions, PlannerSettingsRepository settings) {
+    public SamplePlanBootstrap(SubjectRepository subjects, TaskRepository tasks, StudySessionRepository sessions) {
         this.subjects = subjects;
         this.tasks = tasks;
         this.sessions = sessions;
-        this.settings = settings;
     }
 
     /** Called by Spring once when the app starts. */
     @Override
     @Transactional
     public void run(String... args) {
-        ensureSettingsRow();
+        ProgressCalculator.setWeeklyGoalMinutes(ProgressCalculator.DEFAULT_WEEKLY_GOAL_MINUTES);
         if (subjects.count() == 0) {
             createSamplePlan();
         }
@@ -59,14 +45,8 @@ public class SamplePlanBootstrap implements CommandLineRunner {
         tasks.deleteAllInBatch();
         sessions.deleteAllInBatch();
         subjects.deleteAllInBatch();
+        ProgressCalculator.setWeeklyGoalMinutes(ProgressCalculator.DEFAULT_WEEKLY_GOAL_MINUTES);
         createSamplePlan();
-    }
-
-    private void ensureSettingsRow() {
-        PlannerSettings row = settings.findById(PlannerSettings.SINGLETON_ID).orElse(null);
-        if (row == null) {
-            settings.save(new PlannerSettings(SAMPLE_WEEKLY_GOAL_MINUTES));
-        }
     }
 
     private void createSamplePlan() {
